@@ -207,7 +207,12 @@ export function finishWithRating(w: World) {
   let outcome: 'decisive' | 'victory' | 'marginal' = 'victory';
   if (bonus.length && bonusDone === bonus.length) outcome = 'decisive';
   if (ownTons > 0 && lostTons / ownTons > 0.45) outcome = 'marginal';
-  const reason = outcome === 'decisive' ? 'Decisive victory!' : outcome === 'victory' ? 'Victory.' : 'A costly victory.';
+  const reason =
+    outcome === 'decisive'
+      ? 'Every objective achieved, the bonus objectives too.'
+      : outcome === 'victory'
+        ? `The primary objectives were achieved${bonus.length ? `, and ${bonusDone} of ${bonus.length} bonus objectives` : ''}.`
+        : 'The objectives were achieved, but at a heavy cost in ships.';
   w.finish(outcome, reason);
 }
 

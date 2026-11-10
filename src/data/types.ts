@@ -334,6 +334,11 @@ export interface MissionDef {
     auto?: Behavior;
     /** ship lent to the player when no ship in the fleet can take a required slot */
     loaner?: UnitDef;
+    /**
+     * Historical battles, outside a campaign: the ships that really fought here and fill the free
+     * places. Without it the battle is fought by the groups alone.
+     */
+    history?: UnitDef[];
   };
   allies?: GroupDef[];
   enemy: GroupDef[];

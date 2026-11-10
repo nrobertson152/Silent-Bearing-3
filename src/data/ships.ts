@@ -44,6 +44,11 @@ export const isCarrierType = (t: ShipType) => t === 'CV' || t === 'CVL' || t ===
 export const isCapitalType = (t: ShipType) => t === 'BB' || t === 'BC' || t === 'CV' || t === 'CVL';
 export const isStructureType = (t: ShipType) => t === 'BASE' || t === 'BTY';
 
+/** "York-class heavy cruiser"; an airfield or a battery is just its name. */
+export function classDesc(c: ShipClass): string {
+  return isStructureType(c.type) ? c.name : `${c.name}-class ${TYPE_NAMES[c.type].toLowerCase()}`;
+}
+
 const tur = (g: string, n: number, ...ps: number[]): MountDef[] => ps.map((p) => ({ g, n, p }));
 /** main-battery mounts on both beams */
 const side = (g: string, n: number, ...ps: number[]): MountDef[] =>
@@ -294,7 +299,7 @@ const LIST: ShipClass[] = [
     tur('4in', 2, 0.36, 0.26, -0.36), 10,
     { dc: 8, hedgehog: true, sonar: 2500, hydro: 4500, radarYear: 1941, radar: 8000, hfdf: true, cost: 130, sil: SIL.esc,
       notes: "Escort sloops. Captain Walker's Starling led the most successful U-boat hunting group of the war." }),
-  S('sloop', 'uk', 'DE', 'Grimsby sloop', 1934, 81, 11, 990, 16.5, 0, 0,
+  S('sloop', 'uk', 'DE', 'Grimsby', 1934, 81, 11, 990, 16.5, 0, 0,
     tur('4in', 1, 0.36, -0.36), 3,
     { dc: 4, sonar: 2000, hydro: 3500, cost: 70, sil: SIL.esc, notes: 'Inter-war sloops pressed into convoy escort service in 1940.' }),
   S('tclass', 'uk', 'SS', 'T', 1938.5, 84, 8.1, 1290, 15.3, 0, 0,

@@ -5,6 +5,7 @@ import { CLASSES, isStructureType } from '../src/data/ships';
 import { AIRCRAFT } from '../src/data/aircraft';
 import type { Action, Cond, GroupDef, MissionDef } from '../src/data/types';
 import { buildWorld } from '../src/sim/build';
+import { historicalCore } from '../src/campaign/state';
 import { coreFor } from './helpers';
 
 function groupsIn(m: MissionDef): GroupDef[] {
@@ -77,6 +78,13 @@ describe('campaign data', () => {
       for (const t of m.triggers ?? []) condTags(t.when, tags);
       for (const tag of tags) expect(w.units.some((u) => u.tags.includes(tag)), `${m.id}: trigger tag ${tag}`).toBe(true);
       expect(w.units.some((u) => u.side === 0 && u.controllable), `${m.id}: player has ships`).toBe(true);
+      // the same battle outside a campaign, with the ships that were really there
+      for (const d of m.player.history ?? []) expect(CLASSES[d.c], `${m.id}: history class ${d.c}`).toBeTruthy();
+      const h = buildWorld(m, { controllers: ['ai', 'ai'], core: historicalCore(m) });
+      expect(h.units.some((u) => u.side === 0 && u.controllable), `${m.id}: historical battle has player ships`).toBe(true);
+      for (const u of h.units) {
+        if (!isStructureType(u.cls.type)) expect(h.terrain.isLand(u.x, u.y, 0), `${m.id}: ${u.name} starts on land`).toBe(false);
+      }
     });
   }
 });
@@ -99,6 +107,25 @@ describe('autoplay', () => {
       const lost1 = w.stats[1].lost.length;
       const objs = w.objectives.map((o) => `${o.def.id}:${o.status[0]}`).join(' ');
       console.log(`${m.id.padEnd(4)} ${w.result!.outcome.padEnd(9)} ${fmtClock(w.time)} lost ${lost0}/${lost1} planes ${w.stats[0].planesKilled}/${w.stats[1].planesKilled} ${objs} (${Math.round(ms)} ms)`);
+    });
+  }
+});
+
+describe('seamanship', () => {
+  // Ships left without orders keep clear of the shore: a player who is still reading the
+  // briefing should not find the battle line aground.
+  for (const m of allMissions()) {
+    it(`${m.id}: nobody runs aground in the first half hour`, () => {
+      const aground: string[] = [];
+      for (const core of [coreFor(m), historicalCore(m)]) {
+        const w = buildWorld(m, { controllers: ['human', 'ai'], core, seed: 5 });
+        while (!w.result && w.time < 1800) {
+          w.advance(1);
+          w.events.length = 0;
+          for (const u of w.units) if (u.grounded && !aground.includes(u.name)) aground.push(u.name);
+        }
+      }
+      expect(aground, `${m.id}: aground`).toEqual([]);
     });
   }
 });

@@ -1,7 +1,7 @@
 // Gunnery, torpedoes, depth charges and damage.
 
 import {
-  DEG, KN, angleDiff, clamp, dist, headingTo, inEllipse, interceptTime, segHitsEllipse,
+  DEG, KN, angleDiff, clamp, dist, headingTo, inEllipse, interceptTime, segHitsEllipse, wrap,
 } from '../core/math';
 import { TORPS, dudChance } from '../data/weapons';
 import { NATIONS, aswSkill } from '../data/nations';
@@ -28,7 +28,7 @@ export function updateCombat(w: World, dt: number) {
       if (u.torpTimer <= 0) reloadTorps(w, u);
     }
     if (u.dcCool > 0) u.dcCool -= dt;
-    updateSolution(w, u);
+    updateSolution(w, u, dt);
     if (!u.alert) {
       for (const m of u.mounts) if (m.reload > 0) m.reload -= dt;
       continue;
@@ -53,20 +53,24 @@ function reloadTorps(w: World, u: Unit) {
   }
 }
 
-function updateSolution(w: World, u: Unit) {
+/**
+ * The fire-control plot follows each ship's mean course, lagging the real one by about 40
+ * seconds. The solution decays while either ship is off her plotted course, in proportion to how
+ * far: a hard turn costs most of it, gentle weaving about a steady course only holds it down.
+ * Weaving also spoils the aim directly, since the aim point is extrapolated along the target's
+ * heading at the moment of firing. A change of speed sets it back at once.
+ */
+function updateSolution(w: World, u: Unit, dt: number) {
   const t = w.unit(u.fc.tid);
   if (!t) return;
-  if (Math.abs(angleDiff(u.fc.th, t.h)) > 0.26) {
-    u.fc.q = Math.max(0, u.fc.q - 0.3);
-    u.fc.th = t.h;
-  }
+  const k = Math.min(1, dt / 40);
+  u.fc.th = wrap(u.fc.th + angleDiff(u.fc.th, t.h) * k);
+  u.fc.myH = wrap(u.fc.myH + angleDiff(u.fc.myH, u.h) * k);
+  const off = Math.max(0, Math.abs(angleDiff(u.fc.th, t.h)) - 0.15) * 0.077 + Math.max(0, Math.abs(angleDiff(u.fc.myH, u.h)) - 0.15) * 0.04;
+  if (off > 0) u.fc.q *= Math.exp(-off * dt);
   if (Math.abs(t.v - u.fc.tv) > 2.6) {
     u.fc.q = Math.max(0, u.fc.q - 0.22);
     u.fc.tv = t.v;
-  }
-  if (Math.abs(angleDiff(u.fc.myH, u.h)) > 0.44) {
-    u.fc.q = Math.max(0, u.fc.q - 0.15);
-    u.fc.myH = u.h;
   }
 }
 

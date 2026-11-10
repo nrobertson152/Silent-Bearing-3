@@ -466,8 +466,14 @@ export class World {
     }
 
     // look ahead for land and the map edge
-    if (vmax > 0.5 && (this.terrain.hasLand || true)) {
+    if (vmax > 0.5) {
+      const before = desired;
       desired = this.avoid(u, desired);
+      // a ship holding an ordered course keeps the new one, or she would turn straight back
+      // toward the shore as soon as it was out of sight ahead
+      if (desired !== before && u.orderH !== null && !u.path.length && !u.follow && u.evadeUntil <= this.time) {
+        u.orderH = wrap(u.orderH + angleDiff(before, desired));
+      }
     }
 
     let turn = c.turn * DEG * clamp(u.v / (c.speed * KN * 0.5), 0.3, 1);
@@ -595,7 +601,7 @@ export class World {
   }
 
   private avoid(u: Unit, desired: number): number {
-    const look = Math.max(500, u.v * 70);
+    const look = Math.max(700, u.v * 80);
     const W = this.terrain.w;
     const H = this.terrain.h;
     const clear = (h: number) => {

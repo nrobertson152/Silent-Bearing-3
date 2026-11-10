@@ -3,7 +3,7 @@
 import { clamp, dist, fmtBearing, fmtClock, fmtKm, KN, toBearing } from '../../core/math';
 import { AIRCRAFT, ROLE_NAMES } from '../../data/aircraft';
 import { NATIONS } from '../../data/nations';
-import { TYPE_NAMES, isCarrierType, isMerchantType, isStructureType } from '../../data/ships';
+import { classDesc, isCarrierType, isMerchantType, isStructureType } from '../../data/ships';
 import { TORPS } from '../../data/weapons';
 import { sfx } from '../../audio/sfx';
 import { BattleRenderer, type CursorMode, type ViewState } from '../../render/battleRenderer';
@@ -107,6 +107,7 @@ export class BattleScreen {
     this.bindInput();
     for (const el2 of [top, fleet, side, sel, banner, overlay, this.mini]) {
       el2.addEventListener('pointerdown', (e) => this.onHudPointer(e as PointerEvent));
+      el2.addEventListener('click', (e) => this.onHudClick(e as MouseEvent));
       el2.addEventListener('wheel', (e) => e.stopPropagation());
     }
     this.lastT = performance.now();
@@ -163,7 +164,9 @@ export class BattleScreen {
     const span = Math.max(x1 - x0, y1 - y0, 7000);
     const cx = (x0 + x1) / 2;
     const cy = (y0 + y1) / 2;
-    this.cam.fit(cx - span / 2, cy - span / 2, cx + span / 2, cy + span / 2, 1.4);
+    // keep the force clear of the top bar and the selection panel
+    const big = this.cam.h > 560;
+    this.cam.fit(cx - span / 2, cy - span / 2, cx + span / 2, cy + span / 2, 1.4, big ? { l: 30, t: 50, r: 30, b: 180 } : { l: 0, t: 40, r: 0, b: 0 });
   }
 
   private ownUnits(): Unit[] {
@@ -606,7 +609,8 @@ export class BattleScreen {
     if ((e.target as HTMLElement)?.tagName === 'INPUT') return;
     const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
     if (this.overlayOpen) {
-      if (k === 'Escape') this.closeOverlay();
+      // the result can only be left through the debrief
+      if (k === 'Escape' && this.overlayOpen !== 'result') this.closeOverlay();
       return;
     }
     this.keys.add(k === 'shift' ? 'Shift' : k);
@@ -758,6 +762,24 @@ export class BattleScreen {
       if (msg) this.cam.centerOn(Number(msg.dataset.x), Number(msg.dataset.y));
       return;
     }
+    // dialogs act on click instead (see onHudClick)
+    if (t.closest('.overlay, .hud-banner')) return;
+    e.preventDefault();
+    sfx.click();
+    this.action(t.dataset.act!, t.dataset.v, t.dataset.id ? Number(t.dataset.id) : undefined);
+  }
+
+  /**
+   * The panels act on pointerdown because they are rebuilt several times a second and a click can
+   * lose its button between press and release. Dialogs are static, so they act on a full click:
+   * that way a press that leaves the battle cannot land its release on the next screen. The
+   * keyboard (Enter or Space on a focused button) only produces clicks, with detail 0.
+   */
+  private onHudClick(e: MouseEvent) {
+    const t = (e.target as HTMLElement).closest('[data-act]') as HTMLElement | null;
+    if (!t) return;
+    e.stopPropagation();
+    if (!t.closest('.overlay, .hud-banner') && e.detail !== 0) return;
     e.preventDefault();
     sfx.click();
     this.action(t.dataset.act!, t.dataset.v, t.dataset.id ? Number(t.dataset.id) : undefined);
@@ -953,7 +975,7 @@ export class BattleScreen {
     const row = (u: Unit) => {
       const f = clamp(u.hp / u.maxHp, 0, 1);
       const cls = u.sunk ? 'sunk' : u.escaped ? 'escaped' : this.selected.has(u.id) ? 'sel' : '';
-      return `<div class="fl-row ${cls}" data-unit="${u.id}" title="${esc(u.cls.name)}-class ${esc(TYPE_NAMES[u.cls.type].toLowerCase())}">
+      return `<div class="fl-row ${cls}" data-unit="${u.id}" title="${esc(classDesc(u.cls))}">
         <span class="badge t-${u.cls.type}">${u.cls.type}</span><span class="nm">${esc(u.name)}</span>
         <span class="hp"><i style="width:${(f * 100).toFixed(0)}%;background:${f > 0.6 ? '#7ddf7a' : f > 0.3 ? '#ffc857' : '#ff5e5e'}"></i></span>
         <span class="st">${u.sunk ? 'sunk' : u.escaped ? 'safe' : this.statusIcons(u)}</span></div>`;
@@ -1038,7 +1060,7 @@ export class BattleScreen {
     if (!u.alert) chips.push('<span class="chip">Not at action stations</span>');
     if (u.evadeUntil > w.time) chips.push('<span class="chip">Evading torpedoes</span>');
     const head = `<div class="sel-head">${flagSvg(u.nation, 28)}<div><div class="sel-name">${esc(u.name)} ${stars}</div>
-      <div class="sel-cls">${esc(u.cls.name)}-class ${esc(TYPE_NAMES[u.cls.type].toLowerCase())} · ${esc(nat.navy)}</div></div>
+      <div class="sel-cls">${esc(classDesc(u.cls))} · ${esc(nat.navy)}</div></div>
       <div class="sel-hp"><div class="hpbar"><i style="width:${(f * 100).toFixed(0)}%;background:${f > 0.6 ? '#7ddf7a' : f > 0.3 ? '#ffc857' : '#ff5e5e'}"></i></div><span>${(f * 100).toFixed(0)}%</span></div></div>
       ${chips.length ? `<div class="chips">${chips.join('')}</div>` : ''}`;
     if (!own) {
@@ -1201,7 +1223,7 @@ export class BattleScreen {
       if (!u) return;
       const c = this.w.contacts[0].get(u.id);
       if (u.side === 0 || (c && c.level >= 3)) {
-        html = `<b>${esc(u.name)}</b><br>${esc(u.cls.name)}-class ${esc(TYPE_NAMES[u.cls.type].toLowerCase())}<br>${Math.round((u.hp / u.maxHp) * 100)}% · ${(u.v / KN).toFixed(0)} kn · ${Math.round(toBearing(u.h))}°`;
+        html = `<b>${esc(u.name)}</b><br>${esc(classDesc(u.cls))}<br>${Math.round((u.hp / u.maxHp) * 100)}% · ${(u.v / KN).toFixed(0)} kn · ${Math.round(toBearing(u.h))}°`;
       } else {
         html = `<b>Unidentified contact</b><br>${c?.sonar ? 'sonar' : 'surface'} · ${(u.v / KN).toFixed(0)} kn`;
       }

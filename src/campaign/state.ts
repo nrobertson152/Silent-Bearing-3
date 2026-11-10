@@ -156,6 +156,15 @@ export function toDeployed(ships: CoreShip[]): DeployedCore[] {
   return ships.map((s) => ({ uid: s.uid, cls: s.cls, name: s.name, hp: s.hp, xp: s.xp }));
 }
 
+/**
+ * The ships of a historical battle, fought outside a campaign: the ones that really filled the
+ * free places, or the loaner when the battle has no other player ships.
+ */
+export function historicalCore(m: MissionDef): DeployedCore[] {
+  const h = (m.player.history ?? []).map((u, i) => ({ uid: `hist-${i}`, cls: u.c, name: u.n ?? cls(u.c).name, hp: u.hp ?? 1, xp: 0 }));
+  return h.length || m.player.groups.length ? h : loanerFor(m);
+}
+
 /** Core ships for a mission where nothing in the fleet can fill the only slot. */
 export function loanerFor(m: MissionDef): DeployedCore[] {
   const l = m.player.loaner;

@@ -778,7 +778,6 @@ function subLogic(w: World, g: GroupAI, u: Unit, b: Extract<Behavior, { kind: 's
   const d = best ? dist(u.x, u.y, best.c.x, best.c.y) : Infinity;
   // ships at anchor or crawling can be approached to point-blank range
   const fireR = !best || !def ? 2000 : best.c.v < 6 * KN ? 1800 : Math.min(def.range * 0.75, def.speed < 35 ? 1800 : 2200);
-  const escortNear = enemies.some((k) => k.u.cls.dc && !isNaN(k.c.x) && k.d < 2600);
 
   // 1. a good target in range: shoot first, even if the escorts are coming.
   // A position from crossed sound bearings is not good enough to aim with.

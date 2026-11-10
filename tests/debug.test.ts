@@ -4,8 +4,11 @@ import { buildWorld } from '../src/sim/build';
 import { fmtClock } from '../src/core/math';
 import { coreFor } from './helpers';
 
-it('debug', () => {
-  const id = process.env.MISSION ?? 'uk3';
+// A tracing harness for working on one mission, skipped unless MISSION is set:
+//   MISSION=uk3 SEED=7 UNTIL=1800 EVERY=120 VERBOSE=1 npx vitest run tests/debug.test.ts
+// NOCORE=1 leaves out the campaign fleet; SKIP is a regex of log lines to hide.
+it.skipIf(!process.env.MISSION)('debug', () => {
+  const id = process.env.MISSION!;
   const m = findMission(id)!;
   const w = buildWorld(m, { controllers: ['ai', 'ai'], core: process.env.NOCORE ? undefined : coreFor(m), seed: process.env.SEED ? Number(process.env.SEED) : undefined });
   const until = Number(process.env.UNTIL ?? 1200);

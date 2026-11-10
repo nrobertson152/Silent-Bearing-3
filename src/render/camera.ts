@@ -64,12 +64,18 @@ export class Camera {
     this.clampPos();
   }
 
-  fit(x0: number, y0: number, x1: number, y1: number, pad = 1.3) {
+  /**
+   * Frame a world rectangle. `inset` keeps it clear of screen edges covered by panels (CSS pixels):
+   * the rectangle is centred in what is left.
+   */
+  fit(x0: number, y0: number, x1: number, y1: number, pad = 1.3, inset = { l: 0, t: 0, r: 0, b: 0 }) {
     const w = Math.max(2000, (x1 - x0) * pad);
     const h = Math.max(2000, (y1 - y0) * pad);
-    this.zoom = clamp(Math.min(this.w / w, this.h / h), this.minZoom, this.maxZoom);
-    this.x = (x0 + x1) / 2;
-    this.y = (y0 + y1) / 2;
+    const aw = Math.max(100, this.w - inset.l - inset.r);
+    const ah = Math.max(100, this.h - inset.t - inset.b);
+    this.zoom = clamp(Math.min(aw / w, ah / h), this.minZoom, this.maxZoom);
+    this.x = (x0 + x1) / 2 - (inset.l + aw / 2 - this.w / 2) / this.zoom;
+    this.y = (y0 + y1) / 2 - (inset.t + ah / 2 - this.h / 2) / this.zoom;
     this.clampPos();
   }
 

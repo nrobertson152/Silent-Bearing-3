@@ -45,6 +45,7 @@ export const US: CampaignDef = {
       player: {
         groups: [{ id: 'desdiv59', units: many('clemson', ['Parrott', 'Paul Jones']), x: 40, y: 20, h: 270, spacing: 0.6, speed: 27 }],
         slots: 3,
+        history: [U('clemson', 'John D. Ford'), U('clemson', 'Pope')],
         allowed: ['DD', 'CL'],
         spawn: { x: 41, y: 22.5, h: 270, spacing: 0.6 },
       },
@@ -109,6 +110,7 @@ export const US: CampaignDef = {
           },
         ],
         slots: 3,
+        history: [U('neworleans', 'Astoria'), U('neworleans', 'Portland')],
         allowed: ['CA', 'CL', 'DD', 'CV', 'CVL', 'BB'],
         spawn: { x: 297, y: 181, h: 300, formation: 'line', spacing: 1.5 },
       },
@@ -287,6 +289,7 @@ export const US: CampaignDef = {
       player: {
         groups: [{ id: 'pack', units: [U('balao', 'Parche'), U('gato', 'Steelhead')], x: 30, y: 21, h: 80, formation: 'line', spacing: 9, speed: 15 }],
         slots: 1,
+        history: [U('gato', 'Hammerhead')],
         allowed: ['SS'],
         spawn: { x: 34, y: 28, h: 60 },
       },
@@ -341,8 +344,8 @@ export const US: CampaignDef = {
       zones: [{ id: 'gulf', name: 'Leyte Gulf', kind: 'exit', x: 17, y: 2, r: 4 }],
       player: {
         groups: [
-          { id: 'battleline', units: [U('colorado', 'West Virginia', ['main']), U('colorado', 'Maryland', ['main']), U('tennessee', 'Tennessee', ['main']), U('tennessee', 'California', ['main'])], x: 21, y: 8, h: 90, spacing: 0.9, speed: 12 },
-          { id: 'cruisers', units: [U('northampton', 'Louisville', ['main']), U('neworleans', 'Portland', ['main']), U('cleveland', 'Denver', ['main']), U('cleveland', 'Columbia', ['main'])], x: 20, y: 12, h: 90, spacing: 0.8, speed: 12 },
+          { id: 'battleline', units: [U('colorado', 'West Virginia', ['main']), U('colorado', 'Maryland', ['main']), U('tennessee', 'Tennessee', ['main']), U('tennessee', 'California', ['main'])], x: 21, y: 8, h: 270, spacing: 0.9, speed: 12 },
+          { id: 'cruisers', units: [U('northampton', 'Louisville', ['main']), U('neworleans', 'Portland', ['main']), U('cleveland', 'Denver', ['main']), U('cleveland', 'Columbia', ['main'])], x: 20, y: 12, h: 270, spacing: 0.8, speed: 12 },
           { id: 'desron54', units: many('fletcher', ['Remey', 'McGowan', 'Melvin']), x: 24, y: 28, h: 180, spacing: 0.6, speed: 20 },
           { id: 'desron24', units: many('fletcher', ['Hutchins', 'Daly', 'Bache']), x: 11, y: 24, h: 180, spacing: 0.6, speed: 20 },
           { id: 'pt', units: many('pt', ['PT-131', 'PT-130', 'PT-152']), x: 17, y: 50, h: 180, formation: 'line', spacing: 2.5, speed: 15 },

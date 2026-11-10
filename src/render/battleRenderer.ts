@@ -43,6 +43,8 @@ export class BattleRenderer {
   private precip: { x: number; y: number; s: number }[] = [];
   private dpr = 1;
   private lastFireEmit = 0;
+  /** Show every ship regardless of the player's contact picture (title-screen battles). */
+  spectator = false;
 
   constructor(
     readonly canvas: HTMLCanvasElement,
@@ -142,12 +144,14 @@ export class BattleRenderer {
       ctx.imageSmoothingEnabled = true;
       ctx.drawImage(this.terrain.canvas, cam.sx(0), cam.sy(0), w.terrain.w * cam.zoom, w.terrain.h * cam.zoom);
     }
-    // map edge
-    ctx.strokeStyle = 'rgba(255,255,255,0.25)';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(cam.sx(0), cam.sy(0), w.terrain.w * cam.zoom, w.terrain.h * cam.zoom);
-    this.drawGrid();
-    this.drawZones(vs);
+    if (!this.spectator) {
+      // map edge
+      ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(cam.sx(0), cam.sy(0), w.terrain.w * cam.zoom, w.terrain.h * cam.zoom);
+      this.drawGrid();
+      this.drawZones(vs);
+    }
     this.drawWakes();
     this.drawTorps();
     this.fx.draw(ctx, cam, 'water');
@@ -159,9 +163,11 @@ export class BattleRenderer {
     this.fx.draw(ctx, cam, 'air');
     this.drawShells();
     this.drawAir(vs);
-    this.drawContacts(vs);
-    this.drawSelection(vs);
-    this.drawLabels(vs);
+    if (!this.spectator) {
+      this.drawContacts(vs);
+      this.drawSelection(vs);
+      this.drawLabels(vs);
+    }
     if (vs.box) {
       const b = vs.box;
       ctx.strokeStyle = 'rgba(160,255,190,0.9)';
@@ -242,7 +248,7 @@ export class BattleRenderer {
   }
 
   private visible(u: Unit): boolean {
-    if (u.side === 0) return true;
+    if (u.side === 0 || this.spectator) return true;
     const c = this.world.contacts[0].get(u.id);
     return !!c && c.level >= 2;
   }
@@ -385,14 +391,15 @@ export class BattleRenderer {
       }
       const c = w.contacts[0].get(u.id);
       const isOwn = u.side === 0;
-      if (!isOwn && !(c && c.level >= 2) && !u.sunk) continue;
-      if (!isOwn && u.sunk && !(c && w.time - c.seen < 60)) continue;
+      const known = isOwn || this.spectator;
+      if (!known && !(c && c.level >= 2) && !u.sunk) continue;
+      if (!known && u.sunk && !(c && w.time - c.seen < 60)) continue;
       const sx = cam.sx(u.x);
       const sy = cam.sy(u.y);
       const L = u.cls.length * z;
       const margin = Math.max(30, L);
       if (sx < -margin || sy < -margin || sx > cam.w + margin || sy > cam.h + margin) continue;
-      const identified = isOwn || (c && c.level >= 3);
+      const identified = known || (c && c.level >= 3);
       const submerged = !!u.cls.sub && u.depth !== 'surface';
       const inf = this.inflate(u);
       if (L * inf >= 9 && L >= 2.5 && identified) {
@@ -576,7 +583,7 @@ export class BattleRenderer {
     for (const s of w.squadrons) {
       if (!airborne(s) || s.n <= 0) continue;
       const own = s.side === 0;
-      if (!own && !w.airSeen[0].has(s.id)) continue;
+      if (!own && !w.airSeen[0].has(s.id) && !this.spectator) continue;
       const sx = cam.sx(s.x);
       const sy = cam.sy(s.y);
       if (sx < -40 || sy < -40 || sx > cam.w + 40 || sy > cam.h + 40) continue;
@@ -596,7 +603,7 @@ export class BattleRenderer {
         ctx.arc(sx, sy, 16, 0, Math.PI * 2);
         ctx.stroke();
       }
-      if (own && s.target && (s.state === 'outbound' || s.state === 'scout' || s.state === 'attack')) {
+      if (own && !this.spectator && s.target && (s.state === 'outbound' || s.state === 'scout' || s.state === 'attack')) {
         ctx.setLineDash([4, 6]);
         ctx.strokeStyle = 'rgba(191,227,255,0.35)';
         ctx.beginPath();
@@ -605,7 +612,7 @@ export class BattleRenderer {
         ctx.stroke();
         ctx.setLineDash([]);
       }
-      if (cam.zoom > 0.004) {
+      if (cam.zoom > 0.004 && !this.spectator) {
         ctx.font = '10px "Bahnschrift", "Arial Narrow", sans-serif';
         ctx.fillStyle = col;
         ctx.textAlign = 'left';
