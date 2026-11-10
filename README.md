@@ -4,7 +4,7 @@ A top-down 2D naval strategy game of the Second World War that runs in the brows
 
 Choose a navy and fight its war, from the first months to the last. The Royal Navy, the US Navy, the Kriegsmarine and the Imperial Japanese Navy each have their own campaign of eight historical battles. A world map shows the war turning around you between battles. The ships you keep alive carry over from one battle to the next: they take damage, they get repaired, and their crews gain experience.
 
-**Play:** <https://nrobertson152.github.io/silent-bearing-3/>. There is also a [single-file version](https://nrobertson152.github.io/silent-bearing-3/silent-bearing-3.html) you can save and play offline.
+**Play:** <https://nrobertson152.github.io/Silent-Bearing-3/>. There is also a [single-file version](https://nrobertson152.github.io/Silent-Bearing-3/silent-bearing-3.html) you can save and play offline.
 
 ![The war room in August 1942, five battles into the Royal Navy's war](docs/warroom.jpg)
 
