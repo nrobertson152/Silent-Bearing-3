@@ -5,5 +5,7 @@ export default defineConfig({
     include: ['tests/**/*.test.ts'],
     environment: 'node',
     testTimeout: 120000,
+    // show the autoplay outcomes that the tests print
+    silent: false,
   },
 });
